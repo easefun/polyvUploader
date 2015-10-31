@@ -2,10 +2,6 @@ package com.easefun.polyvsdk.net;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.math.BigInteger;
-import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel;
-import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,17 +21,17 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 
+
 public class PolyvUploadClient {
 
 	private static final String api_url = "http://v.polyv.net:1080/files/";
-	private static HttpClient httpClient = HttpClientBuilder.create().build();
+	private HttpClient httpClient = HttpClientBuilder.create().build();
 	private String userid = null;
 	private String readToken = null;
 	private String writeToken = null;
 	private String filename = null;
 	private String vid = null;
 	private String location = null;
-	private int offset = 0;
 	private Progress progress = null;
 	private String json = null;
 	private String title;
@@ -81,6 +77,7 @@ public class PolyvUploadClient {
 	}
 
 	//
+	@SuppressWarnings("deprecation")
 	public void create() throws Exception {
 		long filesize = new File(this.filename).length();
 
@@ -128,10 +125,21 @@ public class PolyvUploadClient {
 		this.json = EntityUtils.toString(entity);
 	}
 
+//	根据MD5检测是否为同一个文件
 	private static String getMD5(String filename) {
 		String checksum = null;
 		try {
+//			这种方法是Apache的
 			checksum = new String(Hex.encodeHex(DigestUtils.md5(new FileInputStream(filename))));
+			
+			/*
+			 * 注释的方法为sun公司的MessageDigest 加第三方apache commons-codec的支持
+			 * 
+			 * 需要特别强调：MessageDigest线程不安全 。 The MessageDigest classes are NOT thread safe.
+			If they're going to be used by different threads, 
+			just create a new one, instead of trying to reuse them. 
+			*/
+			
 			/*File file = new File(filename);
 			FileInputStream in = new FileInputStream(file);
 			MappedByteBuffer byteBuffer = in.getChannel().map(
@@ -140,6 +148,16 @@ public class PolyvUploadClient {
 			md5.update(byteBuffer);
 			BigInteger bi = new BigInteger(1, md5.digest());
 			return bi.toString(16);*/
+			
+//			 还有一种是Google的Guava，
+			
+			/*import com.google.common.hash.HashCode;
+			import com.google.common.hash.Hashing;
+			import com.google.common.io.Files;*/
+			
+			/*
+			 * HashCode hashCode = Files.hash(new File( filename ), Hashing.md5());
+			checksum = hashCode.toString();*/
 			
 		} catch (Exception e) {
 			e.printStackTrace();
